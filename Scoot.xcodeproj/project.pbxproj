@@ -42,9 +42,20 @@
 		E59C162A263E52540033E2CC /* GridTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1629263E52540033E2CC /* GridTests.swift */; };
 		E59C162E264184500033E2CC /* Tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C162D264184500033E2CC /* Tree.swift */; };
 		E59C162F264184500033E2CC /* Tree.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C162D264184500033E2CC /* Tree.swift */; };
+		E59C1631264185940033E2CC /* TreeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1630264185940033E2CC /* TreeTests.swift */; };
 		E5F0A0022B1A00010000F001 /* Fuzzy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F0A0012B1A00010000F001 /* Fuzzy.swift */; };
 		E5F0A0032B1A00010000F001 /* Fuzzy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F0A0012B1A00010000F001 /* Fuzzy.swift */; };
 		E5F0A0052B1A00010000F001 /* FuzzyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5F0A0042B1A00010000F001 /* FuzzyTests.swift */; };
+		E5F0A0062B1A00010000F001 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = E567D2A1263C77FC00A0A861 /* Grid.swift */; };
+		E5F0A0072B1A00010000F001 /* Positionable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59F854B278938F000A9FBF6 /* Positionable.swift */; };
+		E5F0A0082B1A00010000F001 /* Positionable+Crowding.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59F854E27893B3A00A9FBF6 /* Positionable+Crowding.swift */; };
+		E5F0A0092B1A00010000F001 /* CGRect+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5497A06277D4F6A006EA19B /* CGRect+Extensions.swift */; };
+		E5F0A00A2B1A00010000F001 /* CGPoint+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5497A04276E5E9D006EA19B /* CGPoint+Extensions.swift */; };
+		E5F0A00B2B1A00010000F001 /* Comparable+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1634264AC6FB0033E2CC /* Comparable+Extensions.swift */; };
+		E5F0A00C2B1A00010000F001 /* NSPoint+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E511785F2636EEEB00B4202F /* NSPoint+Extensions.swift */; };
+		E5F0A00D2B1A00010000F001 /* NSScreen+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E511785A2636EEC800B4202F /* NSScreen+Extensions.swift */; };
+		E5F0A00E2B1A00010000F001 /* Mouse.swift in Sources */ = {isa = PBXBuildFile; fileRef = E591E56B2636F8D000C037FF /* Mouse.swift */; };
+		E5F0A00F2B1A00010000F001 /* CGSize+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1632264AC4F60033E2CC /* CGSize+Extensions.swift */; };
 		E59C1633264AC4F60033E2CC /* CGSize+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1632264AC4F60033E2CC /* CGSize+Extensions.swift */; };
 		E59C1635264AC6FB0033E2CC /* Comparable+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59C1634264AC6FB0033E2CC /* Comparable+Extensions.swift */; };
 		E59F854C278938F100A9FBF6 /* Positionable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E59F854B278938F000A9FBF6 /* Positionable.swift */; };
@@ -121,6 +132,7 @@
 		E591E56B2636F8D000C037FF /* Mouse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mouse.swift; sourceTree = "<group>"; };
 		E59C1629263E52540033E2CC /* GridTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridTests.swift; sourceTree = "<group>"; };
 		E59C162D264184500033E2CC /* Tree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tree.swift; sourceTree = "<group>"; };
+		E59C1630264185940033E2CC /* TreeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeTests.swift; sourceTree = "<group>"; };
 		E5F0A0012B1A00010000F001 /* Fuzzy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Fuzzy.swift; sourceTree = "<group>"; };
 		E5F0A0042B1A00010000F001 /* FuzzyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuzzyTests.swift; sourceTree = "<group>"; };
 		E59C1632264AC4F60033E2CC /* CGSize+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGSize+Extensions.swift"; sourceTree = "<group>"; };
@@ -467,6 +479,16 @@
 				E59C1631264185940033E2CC /* TreeTests.swift in Sources */,
 				E5EB84532787E3F80086A5D6 /* PositionableTests.swift in Sources */,
 				E59C162F264184500033E2CC /* Tree.swift in Sources */,
+				E5F0A0062B1A00010000F001 /* Grid.swift in Sources */,
+				E5F0A0072B1A00010000F001 /* Positionable.swift in Sources */,
+				E5F0A0082B1A00010000F001 /* Positionable+Crowding.swift in Sources */,
+				E5F0A0092B1A00010000F001 /* CGRect+Extensions.swift in Sources */,
+				E5F0A00B2B1A00010000F001 /* Comparable+Extensions.swift in Sources */,
+				E5F0A00C2B1A00010000F001 /* NSPoint+Extensions.swift in Sources */,
+				E5F0A00D2B1A00010000F001 /* NSScreen+Extensions.swift in Sources */,
+				E5F0A00E2B1A00010000F001 /* Mouse.swift in Sources */,
+				E5F0A00F2B1A00010000F001 /* CGSize+Extensions.swift in Sources */,
+				E5F0A00A2B1A00010000F001 /* CGPoint+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -672,7 +694,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ScootTests/Info.plist;
@@ -685,7 +706,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = co.nillebco.scoot.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scoot.app/Contents/MacOS/Scoot";
 			};
 			name = Debug;
 		};
@@ -693,7 +713,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = ScootTests/Info.plist;
@@ -706,7 +725,6 @@
 				PRODUCT_BUNDLE_IDENTIFIER = co.nillebco.scoot.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Scoot.app/Contents/MacOS/Scoot";
 			};
 			name = Release;
 		};

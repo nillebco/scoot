@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Run the ScootTests suite.
+#
+# Two Xcode 27 traps are handled here:
+#
+# 1. The unit-test bundle is host-less (no TEST_HOST): the sources under test are
+#    compiled into the test bundle. A *hosted* test whose app is a menu-bar agent
+#    (LSUIElement) makes Xcode's LaunchServices launcher abort with
+#    "Assertion failed: childPID > 0" in IDELaunchServicesLauncher.m.
+#
+# 2. Any running copy is stopped first. LaunchServices returns no new PID when
+#    the app is already running, which surfaces as the same assertion.
+#
+# Usage: scripts/test
+
+set -eu
+
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+
+pkill -f "$ROOT/.build/Build/Products/Debug/Scoot.app" 2>/dev/null || true
+
+xcodebuild test \
+    -project Scoot.xcodeproj \
+    -scheme Scoot \
+    -configuration Debug \
+    -derivedDataPath .build \
+    -destination "platform=macOS,arch=$(uname -m)" \
+    -only-testing:ScootTests

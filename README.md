@@ -37,10 +37,17 @@ scripts/dev --dump          # build, relaunch with SCOOT_DUMP_ELEMENTS=1
 Grant Accessibility to the built app once; signing with an Apple Development
 identity keeps the grant across rebuilds (`SCOOT_SIGN_IDENTITY` overrides it).
 
-Tests: `ScootTests` covers `Tree` and `Fuzzy`. On this machine `xcodebuild test`
-aborts before running anything (`exit=134`, CoreSimulator older than Xcode
-expects), so the fuzzy logic was additionally verified with a standalone
-`swiftc` harness; run the suite from Xcode once the toolchain is healthy.
+Tests: `scripts/test` runs the 45 unit tests (Tree, Fuzzy, geometry, grid,
+positionable).
+
+The unit-test bundle is **host-less**: the sources under test are compiled into
+the test bundle instead of being injected into `Scoot.app`. That is deliberate —
+a hosted test whose host is a menu-bar agent (`LSUIElement`) makes Xcode 27's
+LaunchServices launcher abort with `Assertion failed: childPID > 0` in
+`IDELaunchServicesLauncher.m`, before a single test runs. The same assertion
+appears when a copy of the app is already running (LaunchServices returns no new
+PID), which is why `scripts/test` stops any running instance first.
+
 
 Licence: BSD-3-Clause, unchanged. Copyright (c) 2021-2026 Michael Russo.
 
