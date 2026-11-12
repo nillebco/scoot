@@ -102,6 +102,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.configureMenuBarExtra()
 
+        self.installDiagnosticMenuItems()
+
         OSLog.main.logDetailsForAllConnectedScreens()
 
         for screen in NSScreen.screens {
@@ -290,6 +292,111 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menuBarStatusItemFilledImage?.withTintColor(.systemRed)
     }
 
+    // MARK: Diagnostics
+
+    /// Adds diagnostic items that `Main.storyboard` does not define.
+    ///
+    /// Adding them in code keeps the storyboard untouched while the searchable
+    /// palette is being built.
+    func installDiagnosticMenuItems() {
+
+        guard let debugMenu = submenu(titled: "Debug", in: menu) else {
+            OSLog.main.error("Cannot find the Debug submenu; set SCOOT_DUMP_ELEMENTS=1 to dump on every element-mode invoke instead.")
+            return
+        }
+
+        debugMenu.addItem(.separator())
+
+        let item = NSMenuItem(
+            title: "Dump Accessibility Elements (copies to clipboard)",
+            action: #selector(dumpAccessibilityElementsPressed(_:)),
+            keyEquivalent: ""
+        )
+        item.target = self
+        debugMenu.addItem(item)
+    }
+
+    /// Finds a submenu by title, at any depth.
+    func submenu(titled title: String, in menu: NSMenu) -> NSMenu? {
+        for item in menu.items {
+            guard let child = item.submenu else {
+                continue
+            }
+            if item.title == title || child.title == title {
+                return child
+            }
+            if let found = submenu(titled: title, in: child) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    /// Directory that receives element dumps; created on demand.
+    static var elementDumpDirectory: URL? {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let directory = base.appendingPathComponent("Scoot/element-dumps", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            return directory
+        } catch {
+            OSLog.main.error("Cannot create the element dump directory: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    /// Writes a dump of `app`'s focused window to Application Support, and puts
+    /// the same text on the pasteboard.
+    ///
+    /// Diagnostic for the searchable palette: it shows which text the
+    /// accessibility tree exposes before any UI exists to search it.
+    @discardableResult
+    func dumpAccessibilityElements(of app: NSRunningApplication?) -> URL? {
+
+        guard let app else {
+            OSLog.main.warning("Element dump requested with no target application.")
+            return nil
+        }
+
+        let description = Accessibility.elementDumpDescription(of: app)
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(description, forType: .string)
+
+        guard let directory = Self.elementDumpDirectory else {
+            return nil
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+
+        let bundleIdentifier = app.bundleIdentifier ?? "unknown"
+        let url = directory.appendingPathComponent(
+            "\(formatter.string(from: Date()))-\(bundleIdentifier).txt"
+        )
+
+        do {
+            try description.write(to: url, atomically: true, encoding: .utf8)
+            OSLog.main.log("Wrote accessibility element dump to \(url.path, privacy: .public)")
+            return url
+        } catch {
+            OSLog.main.error("Cannot write the element dump: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    @IBAction func dumpAccessibilityElementsPressed(_ sender: Any) {
+        let candidate = currentApp ?? NSWorkspace.shared.frontmostApplication
+        let isSelf = candidate?.processIdentifier == ProcessInfo.processInfo.processIdentifier
+
+        guard dumpAccessibilityElements(of: isSelf ? nil : candidate) != nil else {
+            NSSound.beep()
+            return
+        }
+    }
+
     // MARK: Activation
 
     func bringToForeground() {
@@ -304,6 +411,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             // the user is actually using the element-based navigation mode.
             // See https://github.com/mjrusso/scoot/issues/26 for more details.
             self.inputWindow.initializeCoreDataStructuresForElementBasedMovement(of: app)
+
+            // Diagnostic: dump what the tree exposes on every element-mode
+            // invoke, so the same apps can be compared across runs.
+            if ProcessInfo.processInfo.environment["SCOOT_DUMP_ELEMENTS"] != nil {
+                dumpAccessibilityElements(of: app)
+            }
         }
 
         OSLog.main.log("Using \(String(describing: activeJumpMode), privacy: .public) jump mode")

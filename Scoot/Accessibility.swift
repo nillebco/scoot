@@ -207,4 +207,110 @@ struct Accessibility {
         return elements
     }
 
+    // MARK: - Diagnostics
+
+    /// Dumps every reachable element of the focused window, with the fields a
+    /// searchable palette could match against.
+    ///
+    /// This exists to answer one question before any palette UI is written:
+    /// *which text does the accessibility tree actually expose per app?* Rows
+    /// are tab-separated and prefixed with comments, so the output can be
+    /// grepped, `awk`-ed and diffed between runs.
+    static func elementDumpDescription(of runningApp: NSRunningApplication) -> String {
+
+        var lines = [String]()
+
+        lines.append("# app\t\(runningApp.localizedName ?? "<unknown>")")
+        lines.append("# bundle\t\(runningApp.bundleIdentifier ?? "<unknown>")")
+        lines.append("# pid\t\(runningApp.processIdentifier)")
+        lines.append("# date\t\(ISO8601DateFormatter().string(from: Date()))")
+
+        guard let app = Application(runningApp) else {
+            lines.append("# error\tcannot create an accessibility application for this process")
+            return lines.joined(separator: "\n")
+        }
+
+        guard let focusedWindow: UIElement = try? app.attribute(.focusedWindow) else {
+            lines.append("# error\tno focused window (not trusted, no window, or app not running)")
+            return lines.joined(separator: "\n")
+        }
+
+        let windowTitle: String = (try? focusedWindow.attribute(.title)) ?? ""
+        let windowFrame: CGRect = (try? focusedWindow.attribute(.frame)) ?? .zero
+
+        lines.append("# window\t\(windowTitle)\t\(format(windowFrame.convertToCocoa()))")
+        lines.append(["# role", "subrole", "title", "description", "valueDescription", "identifier", "value", "enabled", "frame"].joined(separator: "\t"))
+
+        var rows = [String]()
+        var totalsByRole = [String: Int]()
+        var elementsWithoutText = 0
+
+        func traverse(node: UIElement) {
+
+            guard let children: [UIElement] = try? node.arrayAttribute(.children) else {
+                return
+            }
+
+            for child in children {
+
+                guard child != node else {
+                    continue
+                }
+
+                let role = (try? child.role())?.rawValue ?? ""
+                let title: String = (try? child.attribute(.title)) ?? ""
+                let description: String = (try? child.attribute(.description)) ?? ""
+                let valueDescription: String = (try? child.attribute(.valueDescription)) ?? ""
+                let identifier: String = (try? child.attribute(.identifier)) ?? ""
+                let value: String = (try? child.attribute(.value)) ?? ""
+                let enabled: Bool = (try? child.attribute(.enabled)) ?? false
+                let frame: CGRect = (try? child.attribute(.frame)) ?? .zero
+
+                totalsByRole[role, default: 0] += 1
+
+                if title.isEmpty && description.isEmpty && valueDescription.isEmpty && identifier.isEmpty && value.isEmpty {
+                    elementsWithoutText += 1
+                }
+
+                rows.append([
+                    role,
+                    (try? child.subrole())?.rawValue ?? "",
+                    title,
+                    description,
+                    valueDescription,
+                    identifier,
+                    value,
+                    enabled ? "yes" : "no",
+                    format(frame.convertToCocoa()),
+                ].joined(separator: "\t"))
+
+                traverse(node: child)
+            }
+
+        }
+
+        traverse(node: focusedWindow)
+
+        lines.append(contentsOf: rows)
+
+        lines.append("# total\t\(rows.count)")
+        lines.append("# without-any-text\t\(elementsWithoutText)")
+
+        for (role, count) in totalsByRole.sorted(by: { $0.value > $1.value }) {
+            lines.append("# count\t\(role.isEmpty ? "<none>" : role)\t\(count)")
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    private static func format(_ rect: CGRect) -> String {
+        String(
+            format: "%.0f,%.0f %.0fx%.0f",
+            rect.origin.x,
+            rect.origin.y,
+            rect.width,
+            rect.height
+        )
+    }
+
 }

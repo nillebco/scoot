@@ -6,6 +6,45 @@ Scoot helps you efficiently move your mouse cursor, using keyboard shortcuts!
 
 For updates, [follow @mjrusso on Twitter](https://twitter.com/mjrusso).
 
+## This fork (nillebco)
+
+A fork of Scoot used as the base for a **searchable palette** over the
+accessibility tree — the desktop counterpart of [pagecast](https://nilleb.co/pagecast/),
+which does the same for web pages. Upstream stays a hint/grid tool; this fork
+adds the query side.
+
+What differs from upstream:
+
+| Change | Why |
+| --- | --- |
+| Bundle id `co.nillebco.scoot`, team `3KRL43SU3T` | its own Accessibility (TCC) entry, side by side with a Homebrew install |
+| `MACOSX_DEPLOYMENT_TARGET` 11.0 → 12.0 | Xcode 27 no longer builds for macOS 11 |
+| `Scoot/Fuzzy.swift` + `ScootTests/FuzzyTests.swift` | the matcher: token-AND subsequence search with start/word-boundary/consecutive bonuses, returning highlight ranges. No AppKit, no AX dependency, so it is testable on its own |
+| Debug → *Dump Accessibility Elements* | dumps every element of the focused window (role, subrole, title, description, valueDescription, identifier, value, enabled, frame) to `~/Library/Application Support/Scoot/element-dumps/` **and** the pasteboard |
+| `SCOOT_DUMP_ELEMENTS=1` | same dump, written on every element-mode invoke, so the same app can be compared across runs |
+
+The dump exists to answer one question before building any palette UI: *which
+text does the accessibility tree expose per app?* The matcher can only rank what
+is there.
+
+### Development
+
+```sh
+scripts/dev                 # build, sign, relaunch
+scripts/dev --dump          # build, relaunch with SCOOT_DUMP_ELEMENTS=1
+```
+
+Grant Accessibility to the built app once; signing with an Apple Development
+identity keeps the grant across rebuilds (`SCOOT_SIGN_IDENTITY` overrides it).
+
+Tests: `ScootTests` covers `Tree` and `Fuzzy`. On this machine `xcodebuild test`
+aborts before running anything (`exit=134`, CoreSimulator older than Xcode
+expects), so the fuzzy logic was additionally verified with a standalone
+`swiftc` harness; run the suite from Xcode once the toolchain is healthy.
+
+Licence: BSD-3-Clause, unchanged. Copyright (c) 2021-2026 Michael Russo.
+
+
 <img src="https://github.com/mjrusso/scoot/actions/workflows/main_test.yml/badge.svg" alt="build status"></a>
 
 <p align="center">

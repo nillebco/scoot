@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# Build the fork, then install and (re)launch it.
+#
+# Usage:
+#
+#   scripts/dev            build, then open the app
+#   scripts/dev --dump     build, then run with SCOOT_DUMP_ELEMENTS=1, so every
+#                          element-mode invoke writes an accessibility dump to
+#                          ~/Library/Application Support/Scoot/element-dumps/
+#
+# Notes:
+#
+# - Signing with an Apple Development identity keeps the Accessibility (TCC)
+#   grant across rebuilds. An ad-hoc signature (the default when no identity is
+#   passed) changes on every build, so macOS asks for permission again.
+# - The bundle identifier is co.nillebco.scoot, so this build and a Scoot
+#   installed from Homebrew keep separate Accessibility entries.
+
+set -eu
+
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+cd "$ROOT"
+
+IDENTITY=${SCOOT_SIGN_IDENTITY:-"Apple Development"}
+APP=".build/Build/Products/Debug/Scoot.app"
+
+xcodebuild \
+    -project Scoot.xcodeproj \
+    -scheme Scoot \
+    -configuration Debug \
+    -derivedDataPath .build \
+    CODE_SIGN_IDENTITY="$IDENTITY" \
+    CODE_SIGN_STYLE=Manual \
+    PROVISIONING_PROFILE_SPECIFIER="" \
+    build
+
+# Stop any previous instance; the executable path is what distinguishes this
+# build from a Homebrew install in /Applications.
+pkill -f "$ROOT/$APP" 2>/dev/null || true
+sleep 0.5
+
+if [ "${1:-}" = "--dump" ]; then
+    echo "Launching with SCOOT_DUMP_ELEMENTS=1"
+    SCOOT_DUMP_ELEMENTS=1 "$ROOT/$APP/Contents/MacOS/Scoot" &
+    exit 0
+fi
+
+open "$ROOT/$APP"
