@@ -53,6 +53,14 @@ struct Accessibility {
         UIElement.isProcessTrusted(withPrompt: showPrompt)
     }
 
+    /// Applications whose `AXEnhancedUserInterface` attribute Scoot switched on.
+    ///
+    /// Upstream cleared the attribute on *every* running app at quit, including
+    /// apps that had it enabled before Scoot started (there was a FIXME about
+    /// this). We only undo what we set, and only while the PID still belongs to
+    /// the same app.
+    private static var enhancedUserInterfaceEnabledByScoot = [pid_t: String]()
+
     @discardableResult
     static func enableEnhancedUserInterfaceIfNecessary(for runningApp: NSRunningApplication) -> Bool {
 
@@ -67,12 +75,23 @@ struct Accessibility {
             OSLog.main.log("Enabling AXEnhancedUserInterface for \(String(describing: runningApp.localizedName ?? "<unknown>"), privacy: .private(mask: .hash))")
 
             try? app.setAttribute(.enhancedUserInterface, value: true)
+
+            enhancedUserInterfaceEnabledByScoot[runningApp.processIdentifier] = runningApp.bundleIdentifier ?? ""
         }
 
         return enhancedUserInterfaceAlreadyEnabled
     }
 
     static func disableEnhancedUserInterface(for runningApp: NSRunningApplication) {
+
+        let pid = runningApp.processIdentifier
+
+        guard enhancedUserInterfaceEnabledByScoot[pid] == (runningApp.bundleIdentifier ?? "") else {
+            return
+        }
+
+        enhancedUserInterfaceEnabledByScoot[pid] = nil
+
         guard let app = Application(runningApp) else {
             return
         }

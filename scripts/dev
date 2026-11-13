@@ -12,8 +12,10 @@
 # Notes:
 #
 # - Signing with an Apple Development identity keeps the Accessibility (TCC)
-#   grant across rebuilds. An ad-hoc signature (the default when no identity is
-#   passed) changes on every build, so macOS asks for permission again.
+#   grant across rebuilds. The Xcode build itself signs ad-hoc (the project has
+#   no provisioning profile), and an ad-hoc signature changes on every build, so
+#   the app is re-signed here after building. Passing the identity to xcodebuild
+#   instead fails on the KeyboardShortcuts resource bundle, which has no team.
 # - The bundle identifier is co.nillebco.scoot, so this build and a Scoot
 #   installed from Homebrew keep separate Accessibility entries.
 
@@ -22,7 +24,12 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
-IDENTITY=${SCOOT_SIGN_IDENTITY:-"Apple Development"}
+IDENTITY=${SCOOT_SIGN_IDENTITY:-}
+if [ -z "$IDENTITY" ]; then
+    IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null \
+        | sed -n 's/.*"\(Apple Development.*\)"/\1/p' | head -1)
+fi
+
 APP=".build/Build/Products/Debug/Scoot.app"
 
 xcodebuild \
@@ -30,10 +37,18 @@ xcodebuild \
     -scheme Scoot \
     -configuration Debug \
     -derivedDataPath .build \
-    CODE_SIGN_IDENTITY="$IDENTITY" \
-    CODE_SIGN_STYLE=Manual \
-    PROVISIONING_PROFILE_SPECIFIER="" \
     build
+
+if [ -n "$IDENTITY" ]; then
+    codesign --force --sign "$IDENTITY" "$APP"
+else
+    echo "warning: no Apple Development identity found; the app stays ad-hoc signed" >&2
+fi
+
+if ! codesign -dv "$APP" 2>&1 | grep -q "TeamIdentifier=.*[0-9A-Z]"; then
+    echo "warning: $APP is still ad-hoc signed; macOS will ask for Accessibility again" >&2
+    echo "         after each rebuild. Set SCOOT_SIGN_IDENTITY to a local signing identity." >&2
+fi
 
 # Stop any previous instance; the executable path is what distinguishes this
 # build from a Homebrew install in /Applications.

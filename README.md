@@ -21,6 +21,8 @@ What differs from upstream:
 | `MACOSX_DEPLOYMENT_TARGET` 11.0 → 12.0 | Xcode 27 no longer builds for macOS 11 |
 | `Scoot/Fuzzy.swift` + `ScootTests/FuzzyTests.swift` | the matcher: token-AND subsequence search with start/word-boundary/consecutive bonuses, returning highlight ranges. No AppKit, no AX dependency, so it is testable on its own |
 | Debug → *Dump Accessibility Elements* | dumps every element of the focused window (role, subrole, title, description, valueDescription, identifier, value, enabled, frame) to `~/Library/Application Support/Scoot/element-dumps/` **and** the pasteboard |
+| Overlay lifecycle | the labels are hidden *and* the jump windows ordered out when Scoot goes to the background. Upstream relied on `windowDidResignMain`, which does not fire when an agent app is hidden, leaving labels stranded on screen |
+| AX attribute ownership | only the `AXEnhancedUserInterface` values Scoot itself switched on are reverted, tracked by PID + bundle id (upstream cleared every app's, and cleared nothing if it exited uncleanly) |
 | `SCOOT_DUMP_ELEMENTS=1` | same dump, written on every element-mode invoke, so the same app can be compared across runs |
 
 The dump exists to answer one question before building any palette UI: *which
