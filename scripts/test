@@ -19,7 +19,10 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
-pkill -f "$ROOT/.build/Build/Products/Debug/Scoot.app" 2>/dev/null || true
+# No `pkill` here on purpose: the unit-test bundle is host-less, so running the
+# suite never launches — and must never stop — the copy of the app you are
+# using. (An earlier version killed it, which looked exactly like a crash: the
+# menu bar icon and overlay vanished with a SIGTERM in the log.)
 
 xcodebuild test \
     -project Scoot.xcodeproj \
