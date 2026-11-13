@@ -146,15 +146,20 @@ struct Accessibility {
     static func getAccessibleElementsForFocusedWindow(of runningApp: NSRunningApplication) -> [Element] {
         var elements = [Element]()
 
+        let bundleIdentifier = runningApp.bundleIdentifier ?? "<unknown>"
+
         guard let app = Application(runningApp) else {
+            OSLog.main.error("Cannot open an accessibility application for \(bundleIdentifier, privacy: .public) — is Scoot trusted for Accessibility?")
             return elements
         }
 
         guard let focusedWindow: UIElement = try? app.attribute(.focusedWindow) else {
+            OSLog.main.error("\(bundleIdentifier, privacy: .public) exposes no focused window (untrusted, no window, or the app is not responding).")
             return elements
         }
 
         guard let focusedWindowFrame: CGRect = try? focusedWindow.attribute(.frame) else {
+            OSLog.main.error("The focused window of \(bundleIdentifier, privacy: .public) reports no frame.")
             return elements
         }
 

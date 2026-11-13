@@ -23,6 +23,8 @@ What differs from upstream:
 | Debug → *Dump Accessibility Elements* | dumps every element of the focused window (role, subrole, title, description, valueDescription, identifier, value, enabled, frame) to `~/Library/Application Support/Scoot/element-dumps/` **and** the pasteboard |
 | Overlay lifecycle | the labels are hidden *and* the jump windows ordered out when Scoot goes to the background. Upstream relied on `windowDidResignMain`, which does not fire when an agent app is hidden, leaving labels stranded on screen |
 | AX attribute ownership | only the `AXEnhancedUserInterface` values Scoot itself switched on are reverted, tracked by PID + bundle id (upstream cleared every app's, and cleared nothing if it exited uncleanly) |
+| Element-mode wake-up | the flag is switched on at *invoke* as well as at launch, and the scan retries up to 8 × 350 ms while an app wakes its tree. Zen/Firefox exposes 6 stub nodes (3 untitled buttons) until the flag is on, then 1674 nodes / 164 actionable ones |
+| Accessibility prompt in Debug | a Debug build gets its own TCC entry, so it now asks for Accessibility; without the prompt the app never appears in System Settings and element mode silently finds nothing |
 | `SCOOT_DUMP_ELEMENTS=1` | same dump, written on every element-mode invoke, so the same app can be compared across runs |
 
 The dump exists to answer one question before building any palette UI: *which

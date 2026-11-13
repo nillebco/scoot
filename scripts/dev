@@ -52,7 +52,7 @@ fi
 
 # Stop any previous instance; the executable path is what distinguishes this
 # build from a Homebrew install in /Applications.
-pkill -f "$ROOT/$APP" 2>/dev/null || true
+pkill -f "Products/Debug/Scoot.app/Contents/MacOS/Scoot" 2>/dev/null || true
 sleep 0.5
 
 if [ "${1:-}" = "--dump" ]; then

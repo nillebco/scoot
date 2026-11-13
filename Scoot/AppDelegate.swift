@@ -88,8 +88,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         isProcessTrustedForAccessibilityAccess = true
         #else
-        if !Accessibility.checkIfProcessIsTrusted(withPrompt: false) {
-            OSLog.main.warning("Process is **not** trusted for AX; some features will not work!")
+        // A Debug build is a normal app as far as TCC is concerned and gets its
+        // own Accessibility entry, so it has to ask like a release build does.
+        // Without the prompt the app never appears in System Settings and every
+        // element scan silently returns nothing.
+        if !Accessibility.checkIfProcessIsTrusted(withPrompt: true) {
+            OSLog.main.warning("Process is **not** trusted for AX; element-based navigation will find nothing until access is granted.")
         } else {
             isProcessTrustedForAccessibilityAccess = true
         }
@@ -401,10 +405,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let activeJumpMode = self.inputWindow.activeJumpMode
 
         if let app = self.currentApp , activeJumpMode == .element {
-            // For performance reasons, only traverse the accessibility tree if
-            // the user is actually using the element-based navigation mode.
-            // See https://github.com/mjrusso/scoot/issues/26 for more details.
-            self.inputWindow.initializeCoreDataStructuresForElementBasedMovement(of: app)
+
+            self.scanElements(of: app)
 
             // Diagnostic: dump what the tree exposes on every element-mode
             // invoke, so the same apps can be compared across runs.
@@ -431,6 +433,51 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func bringToForeground(using jumpMode: JumpMode) {
         inputWindow.activeJumpMode = jumpMode
         bringToForeground()
+    }
+
+    /// Scans the focused window for element-based navigation, retrying when the
+    /// app has not finished waking its accessibility tree.
+    ///
+    /// Firefox/Zen and Chromium/Electron expose only a handful of untitled stub
+    /// nodes for a moment after `AXEnhancedUserInterface` is switched on, so a
+    /// single synchronous scan can come back with no usable labels. Retrying
+    /// keeps the overlay responsive (it is already on screen) while the labels
+    /// fill in.
+    func scanElements(of app: NSRunningApplication, attempt: Int = 1) {
+
+        guard inputWindow.activeJumpMode == .element else {
+            return
+        }
+
+        // For performance reasons, only traverse the accessibility tree if the
+        // user is actually using element-based navigation.
+        // See https://github.com/mjrusso/scoot/issues/26
+        inputWindow.initializeCoreDataStructuresForElementBasedMovement(of: app)
+
+        let count = jumpViewControllers.reduce(0) { $0 + $1.elements.count }
+        let maximumAttempts = 8
+
+        OSLog.main.log("Element scan attempt \(attempt, privacy: .public): \(count) element(s)")
+
+        // A window that legitimately has a few controls is rescanned too, which
+        // is cheap and deterministic: the same candidates produce the same label
+        // sequences. Stop as soon as the user starts typing, so a late scan can
+        // never invalidate a half-entered sequence.
+        guard count < 10, attempt < maximumAttempts, !inputWindow.isWalkingDecisionTree else {
+            return
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { [weak self] in
+
+            guard let self,
+                  self.currentApp === app,
+                  self.inputWindow.activeJumpMode == .element else {
+                return
+            }
+
+            self.scanElements(of: app, attempt: attempt + 1)
+            self.inputWindow.redrawJumpViews()
+        }
     }
 
     // MARK: Deactivation
