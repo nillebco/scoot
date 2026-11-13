@@ -457,7 +457,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let count = jumpViewControllers.reduce(0) { $0 + $1.elements.count }
         let maximumAttempts = 8
 
-        OSLog.main.log("Element scan attempt \(attempt, privacy: .public): \(count) element(s)")
+        OSLog.main.log("Element scan attempt \(attempt, privacy: .public) for \(app.bundleIdentifier ?? "<unknown>", privacy: .public): \(count) element(s)")
 
         // A window that legitimately has a few controls is rescanned too, which
         // is cheap and deterministic: the same candidates produce the same label

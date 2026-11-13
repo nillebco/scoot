@@ -163,7 +163,14 @@ struct Accessibility {
             return elements
         }
 
-        func traverse(node: UIElement) {
+        func traverse(node: UIElement, depth: Int = 0) {
+
+            // Guard against pathological trees. AX has no cycles in practice,
+            // but a misbehaving app can nest very deeply.
+            guard depth < 64 else {
+                return
+            }
+
             guard let children: [UIElement] = try? node.arrayAttribute(.children) else {
                 return
             }
@@ -177,56 +184,68 @@ struct Accessibility {
                     continue
                 }
 
-                guard let frame: CGRect = try? child.attribute(.frame) else {
-                    continue
-                }
+                // A node without a frame can still have children worth
+                // visiting: Firefox/Zen exposes the page as an AXWebArea that
+                // reports no frame of its own, and Chromium does the same for
+                // some containers. Skipping the subtree of such a node is what
+                // makes element mode see browser chrome only.
+                if let frame: CGRect = try? child.attribute(.frame) {
 
-                // Ignore any elements that don't intersect with the window
-                // bounds.
-                guard focusedWindowFrame.intersects(frame) else {
-                    continue
-                }
+                    let convertedFrame = frame.convertToCocoa()
 
-                let convertedFrame = frame.convertToCocoa()
+                    // Ignore any elements that don't intersect the window
+                    // bounds, and elements that fall between displays.
+                    let screen = NSScreen.screens.first(where: {
+                        $0.frame.intersects(convertedFrame)
+                    })
 
-                let screen = NSScreen.screens.first(where: {
-                    $0.frame.contains(convertedFrame)
-                })
+                    let role: Role? = try? child.role()
 
-                let role: Role? = try? child.role()
+                    if let role = role, let screen = screen, focusedWindowFrame.intersects(frame) {
 
-                if let role = role, let screen = screen {
-
-                    func addElement() {
-                        let element = Element(
-                            role: role,
-                            subrole: try? child.subrole(),
-                            title: try? child.attribute(.title),
-                            description: try? child.attribute(.description),
-                            valueDescription: try? child.attribute(.valueDescription),
-                            enabled: (try? child.attribute(.enabled)) ?? false,
-                            screen: screen,
-                            frame: convertedFrame
-                        )
-                        elements.append(element)
-                    }
-
-                    switch role {
-                    case .cell, .button, .radioButton, .link, .checkBox, .slider, .popUpButton, .menuButton, .incrementor, .handle:
-                        addElement()
-                    default:
-                        break
+                        switch role {
+                        case .cell, .button, .radioButton, .link, .checkBox, .slider, .popUpButton, .menuButton, .incrementor, .handle:
+                            elements.append(Element(
+                                role: role,
+                                subrole: try? child.subrole(),
+                                title: try? child.attribute(.title),
+                                description: try? child.attribute(.description),
+                                valueDescription: try? child.attribute(.valueDescription),
+                                enabled: (try? child.attribute(.enabled)) ?? false,
+                                screen: screen,
+                                frame: convertedFrame
+                            ))
+                        default:
+                            break
+                        }
                     }
                 }
 
-                traverse(node: child)
+                traverse(node: child, depth: depth + 1)
             }
 
         }
 
         traverse(node: focusedWindow)
 
-        OSLog.main.debug("Found \(elements.count) accessibility elements.")
+        #if DEBUG
+        // Sample of what was collected, with frames: enough to tell browser
+        // chrome from page content, and to spot coordinate-space mistakes.
+        // Logged at default level (not .debug) because OSLog does not persist
+        // debug-level messages, and those are the ones worth having afterwards.
+        let sample = elements.prefix(4).map {
+            "\($0.role) \"\(($0.title ?? $0.description ?? "").prefix(24))\" @\(Int($0.frame.origin.x)),\(Int($0.frame.origin.y))"
+        }.joined(separator: " | ")
+        let histogram = Dictionary(grouping: elements, by: { "\($0.role)" })
+            .mapValues(\.count)
+            .sorted { $0.value > $1.value }
+            .prefix(6)
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: " ")
+        OSLog.main.log("Found \(elements.count) accessibility elements in \(bundleIdentifier, privacy: .public). Window: \(Self.format(focusedWindowFrame), privacy: .public). Roles: \(histogram, privacy: .public). Sample: \(sample, privacy: .public)")
+        #else
+        OSLog.main.log("Found \(elements.count) accessibility elements in \(bundleIdentifier, privacy: .public)")
+        #endif
 
         return elements
     }
